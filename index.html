@@ -1,377 +1,264 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>BPC 百家預測系統</title>
-  <style>
-    :root{
-      --bg:#0B1E3C; --card:#111827; --muted:#94a3b8; --accent:#007bff; --gold:#ffcc00;
-      --red:#b22222; --blue:#1e90ff; --gray:#555;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0; font-family:"Microsoft JhengHei",sans-serif; background:var(--bg); color:#fff;
-      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
-    }
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>BPC AI 預測系統</title>
 
-    /* Layout */
-    .container{display:flex; min-height:100vh;}
-    .main{
-      flex:1; padding:20px; max-width:900px;
-    }
-    .sidebar{
-      width:320px; background:var(--card); padding:18px; border-left:1px solid rgba(255,255,255,0.04);
-      transform:translateX(0); transition:transform .25s ease;
-    }
-    .sidebar.hidden{transform:translateX(320px)}
+<link rel="manifest" href="manifest.json"/>
 
-    /* Header / Bot message */
-    .bot-msg{
-      background:#12263f; padding:14px; border-radius:10px; margin-bottom:18px; color:#e6f0ff;
-      box-shadow:0 2px 6px rgba(0,0,0,0.3);
-    }
+<style>
+:root{
+  --bg:#0B1E3C;
+  --accent:#00c3ff;
+  --gold:#ffcc00;
+}
 
-    /* Input area */
-    .input-area{display:flex; gap:10px; margin-bottom:14px; align-items:center;}
-    .input-area input{
-      width:120px; padding:10px 12px; border-radius:8px; border:none; outline:none;
-      background:#0f2a4a; color:#fff;
-    }
-    .send-btn{padding:10px 16px; border-radius:8px; border:none; background:var(--accent); color:#fff; cursor:pointer}
-    .send-btn:active{transform:translateY(1px)}
+body{
+  margin:0;
+  font-family:"Microsoft JhengHei";
+  background: radial-gradient(circle at top, #12263f, #0B1E3C 70%);
+  color:#fff;
+}
 
-    /* Progress */
-    .progress-wrap{margin:12px 0 18px}
-    .progress-bar{width:100%; height:40px; background:#0f2238; border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,0.03)}
-    .progress-fill{height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--gold)); transition:width .05s linear}
-    #progress-text{margin:8px 0 0; color:var(--muted); font-size:14px}
+.glass{
+  backdrop-filter: blur(12px);
+  background: rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.08);
+  box-shadow:0 8px 30px rgba(0,0,0,0.4);
+  border-radius:12px;
+}
 
-    /* Result card */
-    .result-row{display:flex; gap:10px; margin-bottom:14px}
-    .card{flex:1; padding:14px; border-radius:10px; text-align:center; font-weight:700}
-    .card.red{background:var(--red)} .card.blue{background:var(--blue)} .card.gray{background:var(--gray)}
-    .suggestion-card{background:#0f1724; padding:16px; border-radius:10px; margin-bottom:12px; display:none}
+.container{
+  max-width:900px;
+  margin:auto;
+  padding:20px;
+}
 
-    /* Tools */
-    .tools{display:flex; gap:12px; margin-top:8px}
-    .tools button{flex:1; padding:12px; border-radius:10px; border:none; background:#0f2a4a; color:#fff; cursor:pointer}
+.input-area{
+  display:flex;
+  gap:10px;
+  margin-bottom:15px;
+}
 
-    /* History table */
-    .sidebar h3{margin:0 0 12px; font-size:18px}
-    table{width:100%; border-collapse:collapse; font-size:14px}
-    th,td{padding:8px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.04)}
-    th{color:var(--muted); font-weight:600}
+input{
+  flex:1;
+  padding:14px;
+  border-radius:10px;
+  border:none;
+  background:#0f2a4a;
+  color:#fff;
+  font-size:18px;
+  text-align:center;
+}
 
-    /* Roadmap / 路單 */
-    .roadmap{margin-top:14px}
-    .dots{display:flex; flex-wrap:wrap; gap:6px}
-    .dot{width:18px; height:18px; border-radius:50%; display:inline-block; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.02)}
-    .dot.player{background:var(--blue)} .dot.banker{background:var(--red)} .dot.tie{background:var(--gray)}
+button{
+  padding:14px 20px;
+  border:none;
+  border-radius:10px;
+  background:var(--accent);
+  color:#fff;
+  cursor:pointer;
+}
 
-    /* Responsive */
-    @media(max-width:980px){
-      .container{flex-direction:column}
-      .sidebar{width:100%; position:fixed; right:0; top:0; bottom:0; z-index:40}
-      .sidebar.hidden{transform:translateY(-100%)}
-    }
-  </style>
+/* 進度條 */
+.progress{
+  height:35px;
+  border-radius:10px;
+  overflow:hidden;
+  margin:15px 0;
+}
+.progress div{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,var(--accent),var(--gold));
+  transition:width .1s;
+}
+
+#progressText{
+  text-align:center;
+  color:#aaa;
+}
+
+/* 結果 */
+.result{
+  display:flex;
+  gap:10px;
+  margin-top:15px;
+}
+.card{
+  flex:1;
+  padding:15px;
+  text-align:center;
+  font-weight:700;
+  font-size:18px;
+}
+
+/* 建議 */
+.suggestion{
+  margin-top:20px;
+  padding:20px;
+  text-align:center;
+  display:none;
+}
+.big{
+  font-size:26px;
+  font-weight:900;
+}
+.small{
+  font-size:14px;
+  color:#aaa;
+}
+</style>
 </head>
+
 <body>
-  <div class="container">
-    <main class="main">
-      <div class="bot-msg">BPC：請輸入莊家與閒家的牌面點數（例如 8 J 或 10 A）。</div>
+<div class="container">
 
-      <div class="input-area">
-        <input id="banker" placeholder="莊家牌點 (逗號或空格分隔)" />
-        <input id="player" placeholder="閒家牌點 (逗號或空格分隔)" />
-        <button class="send-btn" id="sendBtn">送出</button>
-      </div>
+<div class="glass" style="padding:15px;margin-bottom:15px">
+  🤖 AI：輸入6位數（前3閒，後3莊）<br>
+  例：123456 → 閒123 莊456
+</div>
 
-      <div class="progress-wrap">
-        <div class="progress-bar"><div id="progress" class="progress-fill"></div></div>
-        <div id="progress-text">等待輸入…</div>
-      </div>
+<div class="input-area">
+  <input id="cards" maxlength="6" placeholder="輸入6位數"/>
+  <button onclick="run()">開始預測</button>
+</div>
 
-      <div class="result-row">
-        <div class="card red" id="card-banker">莊家 —</div>
-        <div class="card blue" id="card-player">閒家 —</div>
-        <div class="card gray" id="card-tie">和局 —</div>
-      </div>
+<div class="glass progress">
+  <div id="bar"></div>
+</div>
 
-      <div id="suggestion-card" class="suggestion-card"></div>
+<div id="progressText">等待輸入…</div>
 
-      <div class="tools">
-        <button id="btn-back">⏪ 上一步</button>
-        <button id="btn-reset">🔄 重置</button>
-        <button id="btn-toggle">📑 歷史</button>
-      </div>
-    </main>
+<div class="result">
+  <div class="glass card" id="b">莊家 —</div>
+  <div class="glass card" id="p">閒家 —</div>
+</div>
 
-    <aside id="sidebar" class="sidebar hidden">
-      <h3>歷史紀錄</h3>
-      <table id="history-table">
-        <tr><th>局數</th><th>莊家</th><th>閒家</th><th>建議</th></tr>
-      </table>
+<div id="suggest" class="glass suggestion"></div>
 
-      <div class="roadmap">
-        <h4 style="margin:12px 0 8px;color:var(--muted)">路單</h4>
-        <div id="dots" class="dots"></div>
-      </div>
-    </aside>
-  </div>
+</div>
 
-  <script>
-    /***** 牌值權重與 AP 表（對應你 logic.py） *****/
-    const CARD_VALUES = {
-      "A": -5, "2": -4, "3": -3, "4": -2, "5": 1,
-      "6": 2, "7": 3, "8": 4, "9": 5,
-      "0": 0,
-      "10": 0, "J": 0, "Q": 0, "K": 0
-    };
+<script>
+/* 卡牌權重 */
+const CARD_VALUES={
+"A":-5,"2":-4,"3":-3,"4":-2,"5":1,
+"6":2,"7":3,"8":4,"9":5,
+"0":0,"10":0,"J":0,"Q":0,"K":0
+};
 
-    const AP_VALUES = {
-      0: 0.5, 1: 0.4, 2: 0.3, 3: 0.3, 4: 0.1,
-      5: 0.2, 6: 0.3, 7: 0.3, 8: 0.5, 9: 0.1
-    };
+const AP={
+0:0.5,1:0.4,2:0.3,3:0.3,4:0.1,
+5:0.2,6:0.3,7:0.3,8:0.5,9:0.1
+};
 
-    /***** 內部狀態 *****/
-    let history = []; // 每局紀錄
-    let round = 0;
-    let progressInterval = null;
+/* 🔥 解析6位數 */
+function parseInput(input){
+  if(input.length!==6){
+    alert("請輸入6位數！");
+    return null;
+  }
+  const arr=input.split("");
+  return {
+    player: arr.slice(0,3),
+    banker: arr.slice(3,6)
+  };
+}
 
-    /***** 工具函式：解析輸入成陣列 *****/
-    function parseCards(input) {
-      if (input.length !== 3) {
-        alert("請輸入3位數（代表三張牌）");
-        return [];
-      }
+function cp(arr){
+  return arr.reduce((s,c)=>s+(CARD_VALUES[c]||0),0);
+}
 
-    /***** calc_cp / calc_point（翻譯自 Python） *****/
-    function calc_cp(cards) {
-      return cards.reduce((sum, c) => sum + (CARD_VALUES[c.toUpperCase()] || 0), 0);
+function point(arr){
+  let t=0;
+  arr.forEach(c=>{
+    if(c==="A") t+=1;
+    else t+=parseInt(c)||0;
+  });
+  return t%10;
+}
+
+/* 🚀 主流程 */
+function run(){
+  const input=document.getElementById("cards").value;
+  const data=parseInput(input);
+  if(!data) return;
+
+  const p=data.player;
+  const b=data.banker;
+
+  let bar=document.getElementById("bar");
+  let text=document.getElementById("progressText");
+
+  /* 顯示解析結果 */
+  text.innerText=`閒:${p.join(" ")} ｜ 莊:${b.join(" ")}`;
+
+  let duration=Math.random()*1000+1000;
+  let progress=0;
+  let step=100/(duration/20);
+
+  let timer=setInterval(()=>{
+    progress+=step;
+
+    if(progress>=100){
+      clearInterval(timer);
+      progress=100;
+
+      let bcp=cp(b);
+      let pcp=cp(p);
+
+      let bp=point(b);
+      let pp=point(p);
+
+      let bAdv=(bcp+pcp)*AP[bp];
+      let pAdv=(bcp+pcp)*AP[pp];
+
+      let total=Math.abs(bAdv)+Math.abs(pAdv)||1;
+
+      let bPct=(Math.abs(bAdv)/total*100).toFixed(1);
+      let pPct=(Math.abs(pAdv)/total*100).toFixed(1);
+
+      document.getElementById("b").innerText="莊 "+bPct+"%";
+      document.getElementById("p").innerText="閒 "+pPct+"%";
+
+      let sug="Wait";
+      if(pAdv>bAdv) sug="Player";
+      else if(bAdv>pAdv) sug="Banker";
+
+      let color = sug==="Player"?"#00c3ff":
+                  sug==="Banker"?"#ff4d4f":"#aaa";
+
+      let confidence=Math.max(bPct,pPct);
+
+      let box=document.getElementById("suggest");
+      box.style.display="block";
+      box.innerHTML=`
+        <div class="big" style="color:${color}">
+        👉 建議下注：${sug}
+        </div>
+        <div class="small">
+        信心值：${confidence}%
+        </div>
+      `;
+
+      text.innerText="演算完成";
     }
 
-    function calc_point(cards) {
-      let total = 0;
-      cards.forEach(c => {
-        const cu = c.toUpperCase();
-        if (["10","J","Q","K"].includes(cu)) {
-          total += 0;
-        } else if (cu === "A") {
-          total += 1;
-        } else {
-          const n = parseInt(cu);
-          total += isNaN(n) ? 0 : n;
-        }
-      });
-      return total % 10;
-    }
+    bar.style.width=progress+"%";
+  },20);
+}
 
-    /***** predict（翻譯自 Python） *****/
-    function predictObj(code) {
-      const player_cp = calc_cp(code.player);
-      const banker_cp = calc_cp(code.banker);
-      const total_cp = player_cp + banker_cp;
+/* 🔥 限制只能輸入數字 */
+document.getElementById("cards").addEventListener("input",(e)=>{
+  e.target.value=e.target.value.replace(/[^0-9]/g,"").slice(0,6);
+});
 
-      const player_point = calc_point(code.player);
-      const banker_point = calc_point(code.banker);
+/* 📱 PWA */
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("sw.js");
+}
+</script>
 
-      const player_ap = AP_VALUES[player_point] ?? 0;
-      const banker_ap = AP_VALUES[banker_point] ?? 0;
-
-      const player_adv = total_cp * player_ap;
-      const banker_adv = total_cp * banker_ap;
-
-      let suggestion;
-      if (player_adv > banker_adv) suggestion = "Player";
-      else if (banker_adv > player_adv) suggestion = "Banker";
-      else suggestion = "Wait";
-
-      const record = {
-        player_cp, banker_cp, total_cp,
-        player_point, banker_point,
-        player_ap, banker_ap,
-        player_adv, banker_adv,
-        suggestion
-      };
-
-      // push to history
-      history.push(record);
-      return record;
-    }
-
-    /***** UI 元件 *****/
-    const progressFill = document.getElementById("progress");
-    const progressText = document.getElementById("progress-text");
-    const suggestionCard = document.getElementById("suggestion-card");
-    const cardBanker = document.getElementById("card-banker");
-    const cardPlayer = document.getElementById("card-player");
-    const cardTie = document.getElementById("card-tie");
-    const historyTable = document.getElementById("history-table");
-    const dotsWrap = document.getElementById("dots");
-    const sidebar = document.getElementById("sidebar");
-
-    /***** 進度條與流程 *****/
-    function runProgress() {
-      // 取得輸入
-      const bankerInput = document.getElementById("banker").value;
-      const playerInput = document.getElementById("player").value;
-      const bankerCards = parseCards(bankerInput);
-      const playerCards = parseCards(playerInput);
-
-      // 基本驗證
-      if (bankerCards.length === 0 || playerCards.length === 0) {
-        alert("請輸入莊家與閒家的牌點（至少一張）");
-        return;
-      }
-
-      // 重置 UI
-      suggestionCard.style.display = "none";
-      progressFill.style.width = "0%";
-      progressText.innerText = "AI 模型運算中… 0%";
-
-      let progress = 0;
-      if (progressInterval) clearInterval(progressInterval);
-      progressInterval = setInterval(() => {
-        if (progress >= 100) {
-          clearInterval(progressInterval);
-          progressInterval = null;
-          progressText.innerText = "演算完成！";
-
-          // 呼叫演算邏輯（同步）
-          const data = predictObj({player: playerCards, banker: bankerCards});
-          round++;
-
-          // 更新結果卡
-          // 將 adv 轉為百分比顯示（標準化顯示）
-          const totalAdv = Math.abs(data.player_adv) + Math.abs(data.banker_adv) || 1;
-          const bankerPct = ((Math.abs(data.banker_adv) / totalAdv) * 100).toFixed(1);
-          const playerPct = ((Math.abs(data.player_adv) / totalAdv) * 100).toFixed(1);
-          const tiePct = (100 - (parseFloat(bankerPct) + parseFloat(playerPct))).toFixed(1);
-
-          cardBanker.innerText = `莊家 ${bankerPct}%`;
-          cardPlayer.innerText = `閒家 ${playerPct}%`;
-          cardTie.innerText = `和局 ${tiePct}%`;
-
-          // 顯示建議卡（含詳細數值）
-          suggestionCard.innerHTML = `
-            <div style="font-weight:800;font-size:16px;margin-bottom:8px">建議：${data.suggestion}</div>
-            <div style="font-size:14px;color:var(--muted);margin-bottom:8px">
-              莊家 CP: ${data.banker_cp}；閒家 CP: ${data.player_cp}；總 CP: ${data.total_cp}<br>
-              莊家 點數: ${data.banker_point}；閒家 點數: ${data.player_point}<br>
-              莊家 AP: ${data.banker_ap}；閒家 AP: ${data.player_ap}<br>
-              莊家 Adv: ${data.banker_adv.toFixed(2)}；閒家 Adv: ${data.player_adv.toFixed(2)}
-            </div>
-          `;
-          suggestionCard.style.display = "block";
-
-          // 儲存歷史（簡化版：只存輸入與建議）
-          addHistoryEntry({
-            round,
-            banker: bankerCards.join(" "),
-            player: playerCards.join(" "),
-            suggestion: data.suggestion
-          });
-
-        } else {
-          progress += 1;
-          progressFill.style.width = progress + "%";
-          progressText.innerText = "AI 模型運算中… " + progress + "%";
-        }
-      }, 20); // 20ms * 100 = 2s 完成
-    }
-
-    /***** 歷史紀錄操作 *****/
-    function addHistoryEntry(entry) {
-      // entry: {round, banker, player, suggestion}
-      // push to history table (UI) and roadmap dots
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${entry.round}</td><td>${entry.banker}</td><td>${entry.player}</td><td>${entry.suggestion}</td>`;
-      historyTable.appendChild(tr);
-
-      // roadmap dot
-      const dot = document.createElement("span");
-      dot.className = "dot " + (entry.suggestion === "Player" ? "player" : (entry.suggestion === "Banker" ? "banker" : "tie"));
-      dot.title = `局 ${entry.round}：${entry.suggestion}`;
-      dotsWrap.prepend(dot); // 最新放最前
-    }
-
-    function undoLast() {
-      // 移除最後一筆 UI 與內部 history
-      if (history.length === 0) {
-        // 也檢查 table rows
-        const rows = historyTable.querySelectorAll("tr");
-        if (rows.length > 1) {
-          historyTable.deleteRow(rows.length - 1);
-        }
-        // roadmap
-        if (dotsWrap.firstChild) dotsWrap.removeChild(dotsWrap.firstChild);
-        return;
-      }
-      history.pop();
-      round = Math.max(0, round - 1);
-      // 移除 table 最後一列（保留 header）
-      const rows = historyTable.querySelectorAll("tr");
-      if (rows.length > 1) historyTable.deleteRow(rows.length - 1);
-      // 移除 roadmap 最前一個 dot
-      if (dotsWrap.firstChild) dotsWrap.removeChild(dotsWrap.firstChild);
-    }
-
-    function resetAll() {
-      // 清空輸入、進度、結果、建議卡、歷史
-      document.getElementById("banker").value = "";
-      document.getElementById("player").value = "";
-      progressFill.style.width = "0%";
-      progressText.innerText = "等待輸入…";
-      suggestionCard.style.display = "none";
-      cardBanker.innerText = "莊家 —";
-      cardPlayer.innerText = "閒家 —";
-      cardTie.innerText = "和局 —";
-
-      // 清除歷史 UI
-      historyTable.innerHTML = "<tr><th>局數</th><th>莊家</th><th>閒家</th><th>建議</th></tr>";
-      dotsWrap.innerHTML = "";
-      history = [];
-      round = 0;
-    }
-
-    /***** 綁定按鈕事件 *****/
-    document.getElementById("sendBtn").addEventListener("click", runProgress);
-    document.getElementById("btn-reset").addEventListener("click", resetAll);
-    document.getElementById("btn-back").addEventListener("click", () => {
-      // 上一步：回復最後一筆輸入到 input 欄位
-      // 這裡從 table 最後一列取值
-      const rows = historyTable.querySelectorAll("tr");
-      if (rows.length <= 1) {
-        alert("沒有上一局紀錄");
-        return;
-      }
-      const lastRow = rows[rows.length - 1];
-      const cells = lastRow.querySelectorAll("td");
-      if (cells.length >= 3) {
-        document.getElementById("banker").value = cells[1].innerText;
-        document.getElementById("player").value = cells[2].innerText;
-      }
-      // 同時移除該筆紀錄
-      undoLast();
-    });
-
-    document.getElementById("btn-toggle").addEventListener("click", () => {
-      sidebar.classList.toggle("hidden");
-    });
-
-    // Enter 鍵送出
-    document.getElementById("player").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") runProgress();
-    });
-    document.getElementById("banker").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") runProgress();
-    });
-
-    /***** 初始化（可選） *****/
-    // 預設隱藏側邊欄（手機會覆蓋）
-    if (window.innerWidth < 980) sidebar.classList.add("hidden");
-  </script>
 </body>
 </html>
