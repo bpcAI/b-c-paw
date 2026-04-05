@@ -126,6 +126,7 @@
     const CARD_VALUES = {
       "A": -5, "2": -4, "3": -3, "4": -2, "5": 1,
       "6": 2, "7": 3, "8": 4, "9": 5,
+      "0": 0,
       "10": 0, "J": 0, "Q": 0, "K": 0
     };
 
@@ -141,10 +142,10 @@
 
     /***** 工具函式：解析輸入成陣列 *****/
     function parseCards(input) {
-      if (!input) return [];
-      // 支援逗號或空格分隔，並去除空字串
-      return input.split(/[\s,]+/).filter(Boolean).map(s => s.trim().toUpperCase());
-    }
+      if (input.length !== 3) {
+        alert("請輸入3位數（代表三張牌）");
+        return [];
+      }
 
     /***** calc_cp / calc_point（翻譯自 Python） *****/
     function calc_cp(cards) {
