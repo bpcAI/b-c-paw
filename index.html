@@ -45,7 +45,7 @@
 </head>
 <body>
   <canvas id="matrix"></canvas>
-  <header>BPC機器人/header>
+  <header>BPC機器人</header>
 
   <div id="app">
     <div id="chat" aria-live="polite"></div>
@@ -170,10 +170,37 @@
     if(cmd==='/help' || cmd==='help'){ showHelp(); return; }
 
     if(!session.verified){
-      const v = validate_serial_frontend(text);
-      if(!v.ok){ appendBot('🚫 '+v.msg); return; }
-      session.verified=true; session.awaiting_serial=false; session.awaiting_seq=true;
-      appendBot('🔓 序號驗證成功，請輸入 6 碼牌面（例如：AQ8690）。');
+      try {
+        const res = await fetch("http://localhost:3001/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            license: text
+          })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          appendBot("🚫 " + data.message);
+          return;
+        }
+
+        // 👉 存 token（關鍵）
+        localStorage.setItem("token", data.token);
+
+        session.verified = true;
+        session.awaiting_serial = false;
+        session.awaiting_seq = true;
+
+        appendBot("🔓 序號驗證成功，請輸入 6 碼牌面（例如：AQ8690）。");
+
+      } catch (err) {
+        appendBot("🚫 伺服器連線失敗");
+      }
+
       return;
     }
 
